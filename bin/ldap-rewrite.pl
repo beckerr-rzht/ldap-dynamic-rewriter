@@ -63,13 +63,28 @@ BEGIN
 
 sub loadconfig
 {
-
-my $y      = LoadFile("./etc/config.yaml");
-%debug  = %{ $y->{debug} };
-$config = $y->{config};
-$config->{last}=time();
-#warn "reloading config\n";
+    my $y = LoadFile("./etc/config.yaml");
+    %debug = %{ $y->{debug} };
+    $config = $y->{config};
+    $config->{last}=time();
+    #warn "reloading config\n";
 }
+
+sub h2str
+{
+    my %h = @_;
+    return join(',',map {"$_=$h{$_}"} sort keys %h);
+}
+sub loaddebug
+{
+    my $y = LoadFile("./etc/config.yaml");
+    my %d = %{ $y->{debug} };
+    $config->{last}=time();
+    return if h2str(%debug) eq h2str(%d);
+    warn "reloading debug config\n" if $debug{info} || $d{info};
+    %debug = %d;
+}
+
 
 sub log
 {
@@ -508,7 +523,7 @@ while ( my @ready = $sel->can_read )
 	{
 	# reload config every 15 seconds, subject to connections being made
 	# this allows changing log levels on the fly
-	loadconfig();
+	loaddebug();
 	}
     # on long running server, msgidcache will fill up the memory
     # this is a crude hack to get it back under control: when the server is idle, flush the cache
