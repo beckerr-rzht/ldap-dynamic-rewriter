@@ -240,7 +240,7 @@ sub load_filters
 {
     my ( $dir, $store ) = @_;
 
-    opendir( my $dh, "$dir" );
+    return unless opendir( my $dh, "$dir" );
     foreach my $file ( grep /^([^\.]+)\.pm$/, readdir $dh )
     {
         $file =~ m/^([^\.]+)\.pm$/;
