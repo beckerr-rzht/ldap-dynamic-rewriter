@@ -319,6 +319,8 @@ sub log_response
 		}
         }
 
+      if ($config->{yaml_attributes})
+      {
         # do YAML attributes
         # YAML file may be a DN-named file or attributename/value ending in .yaml
         # ie gidNumber/3213.yaml
@@ -327,11 +329,13 @@ sub log_response
         {
             foreach my $v ( @{ $attr->{vals} } )
             {
-                push @additional_yamls, $attr->{type} . '/' . $v;
+				my $save_v = $v;
+				$save_v =~ s/[^\da-z_-]+/_/gi; # use save chars only
+                push @additional_yamls, $attr->{type} . '/' . substr($save_v,0,64);
             }
         }
 
-        #warn "# additional_yamls ",dump( @additional_yamls );
+        warn "# additional_yamls ",dump( @additional_yamls ) if $debug{filter};
         foreach my $path (@additional_yamls)
         {
             my $full_path = $config->{yaml_dir} . '/' . $path . '.yaml';
@@ -351,6 +355,7 @@ sub log_response
                   };
             }
         }
+      }
 
     }
     ##cache storage
