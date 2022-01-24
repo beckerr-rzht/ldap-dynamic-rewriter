@@ -170,7 +170,7 @@ sub handleclientreq
     my $key;
     my $cdata; 
     # only check the cache for search requests
-    if ($decodedpdu->{searchRequest})
+    if ($decodedpdu->{searchRequest} && $config->{usecache})
 	{
     	( $key, $cdata ) = $cache->get( $decodedpdu->{searchRequest} );
 	}
@@ -363,6 +363,7 @@ sub log_response
     ##cache storage
     if ( $_ = $msgidcache{$clientsocket."-".$response->{messageID} } )
     {
+	  if ($config->{usecache}) {
         warn "CACHE: Previous request: $_" if $debug{cache};
         warn dump($response) if $debug{cache2};
         my $cached = $cache->get($_);
@@ -375,6 +376,7 @@ sub log_response
             $cached = [$response];
         }
         $cache->set( $_, $cached );
+      }
     }
     else
     {
