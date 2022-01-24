@@ -508,11 +508,14 @@ if ( !-d $config->{yaml_dir} )
     warn "DISABLE ", $config->{yaml_dir}, " data overlay" if $debug{warn};
 }
 
-my $listenersock = IO::Socket::INET->new(
+warn $config->{listen};
+my $listenersock = ($config->{ssl} ? "IO::Socket::SSL" : "IO::Socket::INET")->new(
     Listen    => 5,
     Proto     => 'tcp',
     Reuse     => 1,
     LocalAddr => $config->{listen},
+    SSL_cert_file => './etc/server-cert.pem',
+    SSL_key_file => './etc/server-key.pem',
 ) || die "can't open listen socket: $!";
 
 $sel                  = IO::Select->new($listenersock);
