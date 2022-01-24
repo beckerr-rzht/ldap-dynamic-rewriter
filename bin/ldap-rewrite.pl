@@ -104,6 +104,8 @@ sub handleserverdata
     my $clientsocket = shift;
     my $serversocket = shift;
 
+    return 0 unless defined $clientsocket;
+
     # read from server
     asn_read( $serversocket, my $respdu );
     if ( !$respdu )
