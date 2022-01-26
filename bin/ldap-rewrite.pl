@@ -43,6 +43,7 @@ our $server_sock;    # list of all sockets
 my %msgidcache;      # store messageids for cache association purpose
 my $cache = new ReqCache;
 my $log_fh;
+my $filterobj;
 
 # load config
 our %debug ;
@@ -226,17 +227,14 @@ sub log_request
     warn "Request: " . dump($request) if $debug{pktsecure};
 
     # do dynamic filters
-    foreach my $filter ( @{ $config->{infilters} } )
+    foreach my $filter (keys %{$filterobj->{in}->{$clientsocket}})
     {
-        warn( "running filter: " . $filter ) if $debug{filter};
+        warn( "running in filter: " . $filter ) if $debug{filter};
 
-        eval {
-            my $filterobj = new $filter;
-            $filterobj->filter($request);
-        };
+        eval { $filterobj->{in}->{$clientsocket}->{$filter}->filter($request); };
         if ($@)
         {
-            warn "Unable to run filter $filter: $@" if $debug{filter};
+            warn "Unable to run in filter $filter: $@" if $debug{filter};
         }
 
 	if ( $config->{filtervalidate} == 1 )
@@ -299,17 +297,14 @@ sub log_response
         # searchResEntry has format { attributes => [ { type => ATTRNAME, vals => [actual values] } , ... ], objectName => 'DN' }
 
         # do dynamic filters
-        foreach my $filter ( @{ $config->{outfilters} } )
+        foreach my $filter (keys %{$filterobj->{out}->{$clientsocket}})
         {
-            warn( "running filter: " . $filter ) if $debug{filter};
+            warn( "running out filter: " . $filter ) if $debug{filter};
 
-            eval {
-                my $filterobj = new $filter;
-                my $res       = $filterobj->filter( $response->{protocolOp}->{searchResEntry} );
-            };
+            eval { my $res = $filterobj->{out}->{$clientsocket}->{$filter}->filter( $response->{protocolOp}->{searchResEntry}, $response->{messageID} ); };
             if ($@)
             {
-                warn "Unable to run filter $filter: $@" if $debug{filter};
+                warn "Unable to run out filter $filter: $@" if $debug{filter};
             }
 	if ( $config->{filtervalidate} == 1 )
 		{
@@ -483,6 +478,18 @@ sub handleClientConnection
     $server_sock->{ endp($t->{client}) } = $t;
     $server_sock->{ endp($t->{server}) } = $t;
      }
+
+    foreach my $type (qw(in out)) {
+        foreach my $filter ( @{ $config->{$type."filters"} } ) {
+            warn( "init $type filter: " . $filter ) if $debug{filter};
+
+            eval { $filterobj->{$type}->{ $server_sock->{endp($fh)}->{client} }->{$filter} = new $filter; };
+            if ($@) {
+                warn "Unable to init $type filter $filter: $@" if $debug{filter};
+            }
+        }
+	}
+
     # and send the data
     print $srv $clientreq;
 
