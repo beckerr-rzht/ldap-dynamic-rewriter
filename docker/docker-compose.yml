@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+
+  ldap:
+     build:
+       context: .
+       args:
+         uid: ${UID:-1000}
+         gid: ${GID:-1000}
+
+     ports:
+       - ${LISTEN}389:1389
+       - ${LISTEN}636:1636
+     volumes:
+       - /dev/log:/dev/log
+       - ./etc:/opt/ldap-dynamic-rewriter/etc
+       #- ./log:/opt/ldap-dynamic-rewriter/log
