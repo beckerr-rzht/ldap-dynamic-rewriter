@@ -1,29 +1,53 @@
 config:
-    yaml_dir       : './yaml/'
-    outfilter_dir  : './outfilter/'
-    infilter_dir   : './infilter/'
-    listen         : ':389'
-    upstream_ldap  : 'exemple.com'
-    upstream_ssl   : 1
-    log_file       : 'log/ldap-rewrite.log'
-    filtervalidate : 1
+    # insecure listen port
+    #listen         : ':389'
 
-#Generic info
-#Generic warning
-#Generic error
-#packets
-#connections
-#caching info
-#caching debug
-#dynamic filters
+	# secure listen port
+    listen          : ':636'
+    ssl             : 1
+
+	# upstream server
+    upstream_ldap   : 'exemple.com'
+    upstream_ssl    : 1
+
+	# filter
+    outfilter_dir   : './outfilter'
+    infilter_dir    : './infilter'
+    filtervalidate  : 1
+
+	# log
+    log_syslog		: 0
+    log_stderr      : 1
+    #log_file       : 'log/ldap-rewrite.log'
+
+	# disable cache
+    usecache        : 0
+
+    # disable yaml attributes
+    yaml_attributes : 0
+    yaml_dir        : './yaml'
+
 debug:
-    info   : 1     
-    warn   : 1     
-    err    : 1     
-    pkt    : 0     
-    pktsecure    : 0     
-    net    : 0     
-    cache  : 0     
-    cache2 : 0     
-    filter : 0     
+    # Generic info
+    info      : 1
 
+    # Generic warning
+    warn      : 1
+
+    # Generic error
+    err       : 1
+
+    # packets
+    pkt       : 0
+    pktsecure : 0
+
+    # connections
+    net       : 0
+
+    # caching info
+    cache     : 0
+    # caching debug
+    cache2    : 0
+
+    # dynamic filters
+    filter    : 0

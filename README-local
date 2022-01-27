@@ -1,3 +1,5 @@
+# How it all started
+
 This weekend I worked on LDAP mungling: we needed to roll-out Koha with LDAP support, but at the same time, central LDAP server didn't have all data (date of birth, gender and address) needed for full entry about user in Koha. We had those data available as CSV export from other systems.
 
 There are many ways to tackle this problem from modifying Koha LDAP support (which I was somewhat reluctant to do) to importing data back into LDAP. However, none of those things can be done in just one day, so I decided to write small LDAP proxy which will do data marging for me.

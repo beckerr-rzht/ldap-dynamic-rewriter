@@ -1,3 +1,5 @@
+# Original comment on outfilters
+
 rewrite-ldap will look for output filters in outfilters/
 
 all files starting with .PM gets called as a new module, minus the .PM extension.

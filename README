@@ -1,55 +1,67 @@
-Virtual LDAP is set of perl scripts which allows you to augment data in your
-existing LDAP server (which you don't want to modify) using ldap-rewrite.pl
+# LDAP Dynamic Rewriter
+
+LDAP Dynamic Rewriter is set of perl scripts which allows you to augment data in your
+existing LDAP server (which you don't want to modify) using `ldap-rewrite.pl`
 (supporting rewrite of bind request, search requests and responses).
 
-Alternative usage is to expose SQL database (currently Koha database with users)
-to some other system as LDAP server. This supports arbitrary number of objectClass
-objects (one per SQL file) and allows export of groups from RDBMS to LDAP groups.
+## Installation
 
+Depends
+```
+apt-get install libio-socket-ssl-perl libdata-dump-perl libconvert-asn1-perl libnet-ldap-perl libyaml-perl 
+```
 
 Install with:
+```
+cd /srv
+https://github.com/beckerr-rzht/ldap-dynamic-rewriter.git
+```
 
-  cd /srv
-  svn co svn://svn.rot13.org/virtual-ldap/
+Default config:
+```
+cd ldap-dynamic-rewriter 
+cp etc/config.yaml.template etc/config.yaml
+```
 
-  cd virtual-ldap
-  ./bin/install-debian.sh
+Configure:
+```
+vi etc/config.yaml
+```
 
+## Usage
 
 If you need to augment or mungle LDAP from upstream server start:
+```
+./bin/ldap-rewrite.pl
+```
 
-  ./bin/ldap-rewrite.pl
+## Rewrites
 
+### Perl
+Write Perl modules that implements the rewrites and place them in
+`./infilter` or `./outfilter`. See `outfilter/addGidNumber.pm` for
+an example.
+
+### YAML
 You might want to edit configuration at top of script itself, especially
 overlay_prefix if you want your YAML data to be without it.
 
 To augment data with your own, you should create files
+```
+yaml/uid=login,dc=example,dc=com
+```
 
-  yaml/uid=login,dc=example,dc=com
+## Test
 
 If you have test user in your LDAP edit configuration file and run tests:
+```
+cp t/config.pl.template t/config.pl
+vi t/config.pl
+./t/ldap-rewrite.t
+```
 
-  cp t/config.pl.template t/config.pl
-  vi t/config.pl
-  ./t/ldap-rewrite.t
+## Further notes and recommandation
 
-
-If you want to expose MySQL Koha database as LDAP server start:
-
-  ./bin/ldap-koha.pl
-
-
-Home page for this program (please register your usage) is:
-
-  https://www.ohloh.net/p/virtual-ldap
-
-
-
-DEPENDS
-apt-get install libio-socket-ssl-perl libdata-dump-perl libconvert-asn1-perl libnet-ldap-perl libyaml-perl
-
-Further notes and recommandation
-
-this ldap rewriter does not currently implement SSL. it is highly recommanded to bind it to a local port only and run an openssl instance in front of it that does implement SSL
-a sample config is provided in slapd.conf.sample
+Accessing a Koha Database is no longer support by this repository.
+The relevant code and examples may disappear at any time. 
 
