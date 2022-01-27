@@ -2,6 +2,7 @@
 # Copyright (c) 2006 Hans Klunder <hans.klunder@bigfoot.com>. All rights reserved.
 # Copyright (c) 2009 Dobrica Pavlinusic <dpavlin@rot13.org> All rights reserved.
 # Copyright (c) 2012 Hewlett-Packard Development Company, L.P
+# Copyright (c) 2022 Ralf Becker <beckerr@hochschule-trier.de>
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 
@@ -18,6 +19,18 @@
 # * implement dynamic filters support
 # * move original bind request and search response filtering to dynamic filters
 # * implement addGidNumber dynamic filter
+#
+# Modified by Ralf Becker <beckerr@hochschule-trier.de>
+# * fix open missing dirs
+# * fix filter stop working after 15 secs
+# * fix filename injection vulnerability
+# * fix exit on lost client connection
+# * add ldaps support
+# * add option to disable caching
+# * change filter lifetime handling
+# * logging to syslog, file and/or stderr
+# * fixed indention and tabs
+# * increment version
 
 use strict;
 use warnings;
