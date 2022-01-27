@@ -38,7 +38,7 @@ use Sys::Syslog;
 use lib 'lib';
 require ReqCache;
 
-our $VERSION = '0.3';
+our $VERSION = '0.4';
 our $sel;            # IO::Select;
 our $server_sock;    # list of all sockets
 my %msgidcache;      # store messageids for cache association purpose
@@ -93,8 +93,8 @@ STDERR->autoflush(1);
 
 sub log
 {
-	openlog("ldap-rewrite", 'cons,pid', 'local4') unless $log_fh; # first call?
-	$log_fh = \*STDERR unless $config->{log_file};
+    openlog("ldap-rewrite", 'cons,pid', 'local4') unless $log_fh; # first call?
+    $log_fh = \*STDERR unless $config->{log_file};
 
     if ( !$log_fh )
     {
@@ -165,21 +165,21 @@ sub handleclientreq
     }
 
     if ( $decodedpdu->{extendedReq} && $decodedpdu->{extendedReq}->{requestName} eq '1.3.6.1.4.1.1466.20037' )
-        {
+    {
         # this is an SSL request. not implemented yet
         #TODO
         disconnect($clientsocket);
         disconnect($serversocket);
         warn("CRIT: SSL/TLS request but this feature is not implemented");
         return;
-        }
+    }
 
     if ( $decodedpdu->{unbindRequest} && $decodedpdu->{unbindRequest} == 1)
     {
-    warn "Client requested unbind (disconnect)" if $debug{net};
-    disconnect($clientsocket);
-    disconnect($serversocket);
-    return undef;
+        warn "Client requested unbind (disconnect)" if $debug{net};
+        disconnect($clientsocket);
+        disconnect($serversocket);
+        return undef;
     }
     $decodedpdu = log_request($clientsocket,$serversocket,$decodedpdu);
 
@@ -188,21 +188,21 @@ sub handleclientreq
     my $cdata; 
     # only check the cache for search requests
     if ($decodedpdu->{searchRequest} && $config->{usecache})
-	{
-    	( $key, $cdata ) = $cache->get( $decodedpdu->{searchRequest} );
-	}
+    {
+        ( $key, $cdata ) = $cache->get( $decodedpdu->{searchRequest} );
+    }
 
     if ( !$cdata )
     {
         warn "Request not cached" if $debug{cache};
 
-	# store the messageid so that we can cache the response later
-	# small problem if we store the bindrequests: we will remember the result later no matter the actual password: ignore these
-	if (! $decodedpdu->{bindRequest})
-		{
-        	warn "Caching msgid" if $debug{cache};
-	        $msgidcache{ $clientsocket."-".$decodedpdu->{messageID} } = $key;
-		}
+        # store the messageid so that we can cache the response later
+        # small problem if we store the bindrequests: we will remember the result later no matter the actual password: ignore these
+        if (! $decodedpdu->{bindRequest})
+        {
+            warn "Caching msgid" if $debug{cache};
+            $msgidcache{ $clientsocket."-".$decodedpdu->{messageID} } = $key;
+        }
 
         # send to server
         warn dump( \%msgidcache, "nocache", $key, $decodedpdu->{messageID} ) if $debug{cache2};
@@ -234,10 +234,10 @@ sub log_request
 
     die "empty pdu" unless $request;
 
-    #	print '-' x 80,"\n";
-    #	print "Request ASN 1:\n";
-    #	Convert::ASN1::asn_hexdump(\*STDOUT,$pdu);
-    #	print "Request Perl:\n";
+    #   print '-' x 80,"\n";
+    #   print "Request ASN 1:\n";
+    #   Convert::ASN1::asn_hexdump(\*STDOUT,$pdu);
+    #   print "Request Perl:\n";
 
     warn "## Received request" if $debug{net};
     warn "Request: " . dump($request) if $debug{pktsecure};
@@ -253,15 +253,14 @@ sub log_request
             warn "Unable to run in filter $filter: $@" if $debug{filter};
         }
 
-	if ( $config->{filtervalidate} == 1 )
-		{
-		my $req= $LDAPRequest->encode($request);
-			if (! defined($req))
-				{
-				die("ERROR: after running filter $filter, the request does not compile anymore! this probably means the filter corrupted the data structure!");
-			
-				}
-		}
+        if ( $config->{filtervalidate} == 1 )
+        {
+            my $req= $LDAPRequest->encode($request);
+            if (! defined($req))
+            {
+                die("ERROR: after running filter $filter, the request does not compile anymore! this probably means the filter corrupted the data structure!");
+            }
+        }
     }
 
     return $request;
@@ -299,10 +298,10 @@ sub log_response
     my $response = shift;
     die "empty pdu" unless $response;
 
-    #	print '-' x 80,"\n";
-    #	print "Response ASN 1:\n";
-    #	Convert::ASN1::asn_hexdump(\*STDOUT,$pdu);
-    #	print "Response Perl:\n";
+    #   print '-' x 80,"\n";
+    #   print "Response ASN 1:\n";
+    #   Convert::ASN1::asn_hexdump(\*STDOUT,$pdu);
+    #   print "Response Perl:\n";
     warn "Response: " . dump($response) if $debug{pkt};
 
     if ( defined $response->{protocolOp}->{searchResEntry} )
@@ -322,82 +321,80 @@ sub log_response
             {
                 warn "Unable to run out filter $filter: $@" if $debug{filter};
             }
-	if ( $config->{filtervalidate} == 1 )
-		{
-		my $eres= $LDAPResponse->encode($response);
-			if (! defined($eres))
-				{
-				die("WARNING: after running filter $filter, the response does not compile anymore!");
-				}
-		}
-        }
-
-      if ($config->{yaml_attributes})
-      {
-        # do YAML attributes
-        # YAML file may be a DN-named file or attributename/value ending in .yaml
-        # ie gidNumber/3213.yaml
-        my @additional_yamls = ($uid);
-        foreach my $attr ( @{ $response->{protocolOp}->{searchResEntry}->{attributes} } )
-        {
-            foreach my $v ( @{ $attr->{vals} } )
+            if ( $config->{filtervalidate} == 1 )
             {
-				my $save_v = $v;
-				$save_v =~ s/[^\da-z_-]+/_/gi; # use save chars only
-                push @additional_yamls, $attr->{type} . '/' . substr($save_v,0,64);
+                my $eres= $LDAPResponse->encode($response);
+                if (! defined($eres))
+                {
+                    die("WARNING: after running filter $filter, the response does not compile anymore!");
+                }
             }
         }
 
-        warn "# additional_yamls ",dump( @additional_yamls ) if $debug{filter};
-        foreach my $path (@additional_yamls)
+        if ($config->{yaml_attributes})
         {
-            my $full_path = $config->{yaml_dir} . '/' . $path . '.yaml';
-            next unless -e $full_path;
-
-            my $data = LoadFile($full_path);
-            warn "# $full_path yaml = ", dump($data) if $debug{filter};
-
-            foreach my $type ( keys %$data )
+            # do YAML attributes
+            # YAML file may be a DN-named file or attributename/value ending in .yaml
+            # ie gidNumber/3213.yaml
+            my @additional_yamls = ($uid);
+            foreach my $attr ( @{ $response->{protocolOp}->{searchResEntry}->{attributes} } )
             {
-                my $vals = $data->{$type};
+                foreach my $v ( @{ $attr->{vals} } )
+                {
+                    my $save_v = $v;
+                    $save_v =~ s/[^\da-z_-]+/_/gi; # use save chars only
+                    push @additional_yamls, $attr->{type} . '/' . substr($save_v,0,64);
+                }
+            }
 
-                push @{ $response->{protocolOp}->{searchResEntry}->{attributes} },
-                  {
-                    type => $config->{overlay_prefix} . $type,
-                    vals => ref($vals) eq 'ARRAY' ? $vals : [$vals],
-                  };
+            warn "# additional_yamls ",dump( @additional_yamls ) if $debug{filter};
+            foreach my $path (@additional_yamls)
+            {
+                my $full_path = $config->{yaml_dir} . '/' . $path . '.yaml';
+                next unless -e $full_path;
+
+                my $data = LoadFile($full_path);
+                warn "# $full_path yaml = ", dump($data) if $debug{filter};
+
+                foreach my $type ( keys %$data )
+                {
+                    my $vals = $data->{$type};
+
+                    push @{ $response->{protocolOp}->{searchResEntry}->{attributes} }, {
+                            type => $config->{overlay_prefix} . $type,
+                            vals => ref($vals) eq 'ARRAY' ? $vals : [$vals],
+                        };
+                }
             }
         }
-      }
 
     }
     ##cache storage
     if ( $_ = $msgidcache{$clientsocket."-".$response->{messageID} } )
     {
-	  if ($config->{usecache}) {
-        warn "CACHE: Previous request: $_" if $debug{cache};
-        warn dump($response) if $debug{cache2};
-        my $cached = $cache->get($_);
-        if ($cached)
-        {
-            push @$cached, $response;
+        if ($config->{usecache}) {
+            warn "CACHE: Previous request: $_" if $debug{cache};
+            warn dump($response) if $debug{cache2};
+            my $cached = $cache->get($_);
+            if ($cached)
+            {
+                push @$cached, $response;
+            }
+            else
+            {
+                $cached = [$response];
+            }
+            $cache->set( $_, $cached );
         }
-        else
-        {
-            $cached = [$response];
-        }
-        $cache->set( $_, $cached );
-      }
     }
     else
     {
-
-        #            warn "CACHE: no previous request for $response->{messageID}";
+        # warn "CACHE: no previous request for $response->{messageID}";
     }
     ##
     my $pdu = $LDAPResponse->encode($response);
 
-    #    warn "## response = ", dump($response);
+    # warn "## response = ", dump($response);
 
     return $pdu;
 }
@@ -446,20 +443,20 @@ sub disconnect
 
     if ($srv)
     {
-    $tmpendp=endp($srv);
-    warn "removed srv ".$tmpendp if $debug{net};
-        $sel->remove($srv);
-        $srv->close;
-        delete $server_sock->{ $tmpendp };
+        $tmpendp=endp($srv);
+        warn "removed srv ".$tmpendp if $debug{net};
+            $sel->remove($srv);
+            $srv->close;
+            delete $server_sock->{ $tmpendp };
     }
 
     if ($client)
     {
-    $tmpendp=endp($client);
-    warn "removed client ".$tmpendp if $debug{net};
-        $sel->remove($client);
-        $client->close;
-        delete $server_sock->{ $tmpendp };
+        $tmpendp=endp($client);
+        warn "removed client ".$tmpendp if $debug{net};
+            $sel->remove($client);
+            $client->close;
+            delete $server_sock->{ $tmpendp };
     }
     use warnings;
 
@@ -482,18 +479,18 @@ sub handleClientConnection
     # if we don't already have a socket connection
     my $srv = $server_sock->{endp($fh)}->{server} ;
     if ( !$srv )
-     {
-     $srv= connect_to_server;
-     my $t = { server => $srv, client => $fh };
-     if ( !$t->{server} )
-         {
+    {
+        $srv= connect_to_server;
+        my $t = { server => $srv, client => $fh };
+        if ( !$t->{server} )
+        {
              disconnect( $t->{client} );
              return 0;
-         }
-    
-    $server_sock->{ endp($t->{client}) } = $t;
-    $server_sock->{ endp($t->{server}) } = $t;
-     }
+        }
+
+        $server_sock->{ endp($t->{client}) } = $t;
+        $server_sock->{ endp($t->{server}) } = $t;
+    }
 
     foreach my $type (qw(in out)) {
         foreach my $filter ( @{ $config->{$type."filters"} } ) {
@@ -504,7 +501,7 @@ sub handleClientConnection
                 warn "Unable to init $type filter $filter: $@" if $debug{filter};
             }
         }
-	}
+    }
 
     # and send the data
     print $srv $clientreq;
@@ -533,7 +530,7 @@ if ( !-d $config->{yaml_dir} )
     warn "DISABLE ", $config->{yaml_dir}, " data overlay" if $debug{warn};
 }
 
-warn $config->{listen};
+warn "Listening on ".$config->{listen};
 my $listenersock = ($config->{ssl} ? "IO::Socket::SSL" : "IO::Socket::INET")->new(
     Listen    => 5,
     Proto     => 'tcp',
@@ -555,17 +552,17 @@ warn "# config = ", dump($config);
 while ( my @ready = $sel->can_read )
 { 
     if ($config->{last}+15<= time())
-	{
-	# reload config every 15 seconds, subject to connections being made
-	# this allows changing log levels on the fly
-	loaddebug();
-	}
+    {
+        # reload config every 15 seconds, subject to connections being made
+        # this allows changing log levels on the fly
+        loaddebug();
+    }
     # on long running server, msgidcache will fill up the memory
     # this is a crude hack to get it back under control: when the server is idle, flush the cache
     if ( scalar keys %$server_sock == 0)
-	{
-	%msgidcache=();
-	}
+    {
+        %msgidcache=();
+    }
 
 
     warn "## fh poll " . time if $debug{net};
@@ -602,3 +599,5 @@ while ( my @ready = $sel->can_read )
 
 
 1;
+
+# vim: set ts=4 sw=4 sts=4 et :
