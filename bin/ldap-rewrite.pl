@@ -33,6 +33,7 @@ use YAML qw/LoadFile/;
 use Carp;
 use File::Spec;
 use File::Basename;
+use Sys::Syslog;
 
 use lib 'lib';
 require ReqCache;
@@ -59,7 +60,7 @@ BEGIN
 
     $SIG{__DIE__} = sub { Carp::confess @_ };
 #    $SIG{__WARN__} = sub { Carp::cluck @_ };
-    $SIG{'__WARN__'} = sub { warn @_; main::log(@_); };
+    $SIG{'__WARN__'} = sub { main::log(@_); };
 }
 
 sub loadconfig
@@ -68,7 +69,8 @@ sub loadconfig
     %debug = %{ $y->{debug} };
     $config = $y->{config};
     $config->{last}=time();
-    #warn "reloading config\n";
+    $config->{log_stderr} = 1 if !$config->{log_syslog} && !$config->{log_file};
+    warn "Loading config";
 }
 
 sub h2str
@@ -87,17 +89,31 @@ sub loaddebug
 }
 
 
+STDERR->autoflush(1);
+
 sub log
 {
-    return unless $config->{log_file};
+	openlog("ldap-rewrite", 'cons,pid', 'local4') unless $log_fh; # first call?
+	$log_fh = \*STDERR unless $config->{log_file};
 
     if ( !$log_fh )
     {
         open( $log_fh, '>>', $config->{log_file} ) || die "can't open ", $config->{log_file}, ": $!";
         print $log_fh "# " . time;
+        $log_fh->autoflush(1);
     }
-    $log_fh->autoflush(1);
-    print $log_fh localtime()." - ".join( "\n".localtime()." - ", @_ ), "\n";
+
+    #print $log_fh localtime()." - ".join( "\n".localtime()." - ", @_ ), "\n";
+    my $t = localtime();
+    foreach (@_) {
+        next unless /(.*?)(?: at (?:\S*\/)?(\S+) line (\d+)\.)?\R?$/s;
+
+        my @a = map { sprintf("%18s[%4s ] %s", $2 || '-', $3 || '?', $_) } split/\R/,($1 || '');
+
+        map { syslog('notice', $_)    } @a if $config->{log_syslog};
+        map { print $log_fh "$t $_\n" } @a if $config->{log_file};
+        map { print STDERR  "$t $_\n" } @a if $config->{log_stderr};
+    }
 }
 
 sub handleserverdata
