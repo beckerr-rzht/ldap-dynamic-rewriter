@@ -1,5 +1,7 @@
 # How it all started
 
+https://blog.rot13.org/2009/03/virtual-ldap-rewrite-or-augment-data-on-the-fly.html
+
 This weekend I worked on LDAP mungling: we needed to roll-out Koha with LDAP support, but at the same time, central LDAP server didn't have all data (date of birth, gender and address) needed for full entry about user in Koha. We had those data available as CSV export from other systems.
 
 There are many ways to tackle this problem from modifying Koha LDAP support (which I was somewhat reluctant to do) to importing data back into LDAP. However, none of those things can be done in just one day, so I decided to write small LDAP proxy which will do data marging for me.
