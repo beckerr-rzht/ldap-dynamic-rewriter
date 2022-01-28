@@ -48,14 +48,10 @@ use File::Spec;
 use File::Basename;
 use Sys::Syslog;
 
-use lib 'lib';
-require ReqCache;
-
 our $VERSION = '0.4';
 our $sel;            # IO::Select;
 our $server_sock;    # list of all sockets
 my %msgidcache;      # store messageids for cache association purpose
-my $cache = new ReqCache;
 my $log_fh;
 my $filterobj;
 
@@ -63,6 +59,14 @@ my $filterobj;
 our %debug ;
 our $config ;
 loadconfig();
+
+my $cache;
+if ($config->{usecache})
+{
+    use lib 'lib';
+    require ReqCache;
+    $cache = new ReqCache;
+}
 
 BEGIN
 {
