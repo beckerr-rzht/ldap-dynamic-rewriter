@@ -513,7 +513,7 @@ sub handleClientConnection
         foreach my $filter ( @{ $config->{$type."filters"} } ) {
             warn( "init $type filter: " . $filter ) if $debug{filter};
 
-            eval { $filterobj->{$type}->{ $server_sock->{endp($fh)}->{client} }->{$filter} = new $filter; };
+            eval { $filterobj->{$type}->{ $server_sock->{endp($fh)}->{client} }->{$filter} = new $filter($fh); };
             if ($@) {
                 warn "Unable to init $type filter $filter: $@" if $debug{filter};
             }
